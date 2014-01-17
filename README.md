@@ -12,7 +12,19 @@ Quick start
 
 > npm install
 
-> node server.js
+> node app.js
+
+Deploying
+---------
+
+If you want to deploy, first make sure all your changes are pushed to Github
+first. Please don't push changes to Heroku that are not pushed to Github; you
+will be haunted for life if you do.
+
+Once you've added the Heroku repo as a remote (say, `heroku`), deploy with
+
+> git push origin master # push to github (make sure this succeeds)
+> git push heroku master # deploy to heroku
 
 Dependencies
 ------------
@@ -26,7 +38,7 @@ If you need to add modules to the project, run
 Run
 ---
 
-Run the app with `node server.js
+Run the app with `node app.js`
 if you want to run on a port different from the default value of 8086, use `node server.js default <port>` to specify the port number.
 
 Work on a separate branch and push when you're confident in your changes.)
