@@ -11,10 +11,21 @@ var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov",
 var projects;
 var events;
 
-// Access token is taken from Brian Chu's account
-// if the access token fails (one symptom is that no events show up), you can get another one by going to https://developers.facebook.com/tools/explorer, clicking "Get Access Token", and checking off "user_groups"
-var ACCESS_TOKEN = 'CAACEdEose0cBAObaXAtuO7rCaoK416LtyKIBPsZCy4fitxRvqy9QfacNeCZCXfzCAn1yIW08FG0C7oUui8fvqUYJs7ZC1ixhkZByYSuU0FHFpqwl4ZByqc7GRudJBvHTGh7cFNmAbZBVuZB3iPPINWnxarAdBs3OZCHwVsxqnskTJ0zoqZC9mZClr5GtfmM2hDZBzK6J3fuYV64yEnB92s3fVwvg3UCHAGCYbAZD';
 var HAB_GROUP_ID = '276905079008757';
+// Access token is from Brian Chu's account, and expires after 60 days.
+// Read more here: https://developers.facebook.com/docs/facebook-login/access-tokens/
+// The access token MUST be a *user* access token (not an *app* or *page* access token).
+// To regenerate the access token:
+// 1. Go to https://developers.facebook.com/tools/explorer
+// 2. Select any Facebook Application you are the admin of.
+// 3. Generate an access token with 'user_groups' permission checked off.
+// 4. The access token is a short-lived access token (expires in 1 hour)
+// 5. Make this API call:
+// https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=[app-id]&client_secret=[app-secret]&fb_exchange_token=[access-token]
+// 6. The result is a long-term access token. Paste that in as ACCESS_TOKEN.
+// An example is: https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
+var ACCESS_TOKEN = 'CAAVwW1aUxX8BAI2J1eB3UWFHwOj0piAniThP2FgzPivgzUKn7SnCLTjs6M0laVAybprZBhp4ZA94xIzAZBTLmZBQoa4bVBRfDEKOwv3EqUpGzP5k2RyRcvdjhRc0MZA0x5A2MzZBTLzmmCeZBLpMZAnxesD0Dd4M0RzeusvklhmZBER02YV1KuYfRaD99Lm97PWdas5jIfWvwTkmFKevPdAeO';
+
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
   return a - b;
@@ -106,6 +117,7 @@ function getPhotos(manyalbums) {
 function getCoverPhotos(albums) {
   for (var i = 0; i < albums.length; i++) {
     var album = albums[i];
+    if (!album.coverPhoto) { continue; }
     var coverPath = '/' + album.coverPhoto + '/?access_token='+ACCESS_TOKEN;
     https.get({
       host: 'graph.facebook.com',
@@ -325,6 +337,7 @@ app.get('/submit', function(req, res){
   res.render('hackjam', {page: 'hack'});
 });
 
+// deprecated and unused, since album photos are inaccessible via FB Graph API:
 app.get('/media/:id', function(req, res){
   var pid = req.params.id;
   var p = photographs[pid];
