@@ -11,7 +11,10 @@ var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov",
 var projects;
 var events;
 
-var ACCESS_TOKEN = 'AAAD3shybXjYBAJeBIpg6uKS1edUGvHnZBo7Otf65QfBaFNk3FQCAAWb6D2ILICPb0xDeU4ZAM9BrcDGSw6t5wP9ZCCuG6oZD';
+// Access token is taken from Brian Chu's account
+// if the access token fails (one symptom is that no events show up), you can get another one by going to https://developers.facebook.com/tools/explorer, clicking "Get Access Token", and checking off "user_groups"
+var ACCESS_TOKEN = 'CAACEdEose0cBAObaXAtuO7rCaoK416LtyKIBPsZCy4fitxRvqy9QfacNeCZCXfzCAn1yIW08FG0C7oUui8fvqUYJs7ZC1ixhkZByYSuU0FHFpqwl4ZByqc7GRudJBvHTGh7cFNmAbZBVuZB3iPPINWnxarAdBs3OZCHwVsxqnskTJ0zoqZC9mZClr5GtfmM2hDZBzK6J3fuYV64yEnB92s3fVwvg3UCHAGCYbAZD';
+var HAB_GROUP_ID = '276905079008757';
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
   return a - b;
@@ -49,11 +52,11 @@ function formatDate(date) {
       h = 12;
   }
   m = m<10?"0"+m:m;
-  
+
   if(m == '00') {
     return h + dd;
   }
-  
+
   s = s<10?"0"+s:s;
 
 
@@ -61,18 +64,18 @@ function formatDate(date) {
   return h+":"+m+dd;
 }
 
+// This function is no longer used. It used to grab photos from each album, but Facebook no longer provides an API for getting FB group album photos.
 function getPhotos(manyalbums) {
-  
   for (var j in manyalbums) {
     var inline_function = function(i) {
       var a = manyalbums[i];
       var aid = a['id'];
       var currpic = photographs[aid]['photos'] = [];
-      
-      var apath = '/' + aid + '/photos?limit=200&access_token='+ACCESS_TOKEN;
+
+      var photosPath = '/' + aid + '/photos?limit=200&access_token='+ACCESS_TOKEN;
       https.get({
         host: 'graph.facebook.com',
-        path: apath
+        path: photosPath
       }, function(res) {
           var body = "";
           res.on('data', function(chunk) {
@@ -91,10 +94,37 @@ function getPhotos(manyalbums) {
           } catch (error) {
             console.log(error.message);
           }
-        }); 
+        });
       });
     }
     inline_function(j);
+  }
+}
+
+
+// Get cover photos for each album
+function getCoverPhotos(albums) {
+  for (var i = 0; i < albums.length; i++) {
+    var album = albums[i];
+    var coverPath = '/' + album.coverPhoto + '/?access_token='+ACCESS_TOKEN;
+    https.get({
+      host: 'graph.facebook.com',
+      path: coverPath
+    }, function(res) {
+        var body = "";
+      res.on('data', function(chunk) {
+        body += chunk;
+      });
+      res.on('end', function() {
+        try {
+          var data = JSON.parse(body);
+          album.icon = data.picture;
+          album.source = data.source;
+        } catch (error) {
+          console.log(error.message);
+        }
+      });
+    });
   }
 }
 
@@ -102,11 +132,10 @@ function refreshCache () {
   db.collection('projects').find().sort({'order':1}).toArray(function(err, items){
       projects = items;
   });
-  
 
   https.get({
     host: 'graph.facebook.com',
-    path: '/1295520723/albums?access_token='+ACCESS_TOKEN+'&limit=2500&until=13114601440&__paging_token=2035970260967'
+    path: '/' + HAB_GROUP_ID + '/albums?access_token=' + ACCESS_TOKEN
   }, function(res) {
       var body = "";
       res.on('data', function(chunk) {
@@ -118,37 +147,28 @@ function refreshCache () {
           photographs = {};
           var album;
           var data = JSON.parse(body);
-          for (var i in data['data']) {
-            album = data['data'][i];
-            if (album['name'].indexOf('@') != -1) {
-              var currentalbum = {};
-              
-              currentalbum['name'] = album['name'].substring(4, album['name'].length);
-              currentalbum['id'] = album['id'];
-              
-              currentid = album['id'];
-              
-              photographs[currentid] = [];
-              photographs[currentid]['name'] = currentalbum['name'];
-              
-              albums.push(currentalbum);
-            }
-            
+          for (var i = 0; i < data.data.length ; i++) {
+            album = data.data[i];
+            var currentalbum = {
+              name: album.name,
+              id: album.id,
+              coverPhoto: album.cover_pid,
+              fbLink: album.link
+            };
+            albums.push(currentalbum);
           }
-          getPhotos(albums);
-          
-          
+          getCoverPhotos(albums);
         } catch (error) {
           console.log(error.message);
         }
       });
   });
 
-    
-  
+
+  // refresh list of events:
   https.get({
     host: 'graph.facebook.com',
-    path: '/276905079008757/events?access_token=AAAD3shybXjYBAJeBIpg6uKS1edUGvHnZBo7Otf65QfBaFNk3FQCAAWb6D2ILICPb0xDeU4ZAM9BrcDGSw6t5wP9ZCCu%20G6oZD'
+    path: '/' + HAB_GROUP_ID + '/events?access_token=' + ACCESS_TOKEN
   }, function(res) {
     var body = "";
     res.on('data', function(chunk){
@@ -156,29 +176,29 @@ function refreshCache () {
     });
     res.on('end', function(){
       try {
-        var ts = (new Date()).valueOf();
+        var currentTime = (new Date()).valueOf();
         events = {'new': [], 'old': []};
         data = JSON.parse(body).data;
 
         // This is a monkey patch for a fb bug
-        addMissingEvent(events);
-        
+        // BRIAN CHU'S NOTE: I have commented this out because it appears to be useless:
+        // addMissingEvent(events);
+
         var event, date;
         for(var i in data) {
           event = data[i];
-          // assumes that title contains @ iff it is an H@B event
-          if( event.name.indexOf("@") != -1 && typeof(event.name) !== "undefined") {
+          if(event.name !== undefined) {
             // gets a more detailed event object
             https.get({
               host: 'graph.facebook.com',
-              path: 'https://graph.facebook.com/' + event.id + '?access_token=AAAD3shybXjYBAJeBIpg6uKS1edUGvHnZBo7Otf65QfBaFNk3FQCAAWb6D2ILICPb0xDeU4ZAM9BrcDGSw6t5wP9ZCCu%20G6oZD'
+              path: 'https://graph.facebook.com/' + event.id + '?access_token=' + ACCESS_TOKEN
             }, function(res) {
               body = "",
               res.on('data', function(chunk){
                 body += chunk;
               });
               res.on('end', function() {
-                if( body == "false") {
+                if(body == "false") {
                   return;
                 }
                 try {
@@ -190,14 +210,15 @@ function refreshCache () {
                 event.date = months[date.getMonth()] + " " + date.getDate();
                 event.dateObj = date;
                 event.time = formatDate(date);
-                if( event.description != undefined ) {
+                if( event.description !== undefined ) {
                   event.description = event.description.split('\n').shift();
                 }
-                event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large"
-                if( typeof(event.name) !== "undefined" && event.name.indexOf("Big Hack") >= 0) {
-                  event.pic_url = "/images/events/bighack.png";
-                }
-                if(event.dateObj.valueOf() > ts) {
+                event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large";
+                // Brian Chu: I removed this because it seems like a giant hack:
+                // if( typeof(event.name) !== "undefined" && event.name.indexOf("Big Hack") >= 0) {
+                //   event.pic_url = "/images/events/bighack.png";
+                // }
+                if(event.dateObj.valueOf() > currentTime) {
                   events['new'].push(event);
                 } else {
                   events['old'].push(event);
@@ -212,8 +233,7 @@ function refreshCache () {
           }
         }
 
-
-      } catch (e){console.log(e.message)}
+      } catch (e){console.log(e.message);}
     });
   });
 
@@ -221,6 +241,7 @@ function refreshCache () {
 }
 
 // Add the missing H@B office hour event
+// Brian Chu's NOTE: this appears to be useless.
 function addMissingEvent(events) {
   var ts = (new Date()).valueOf();
   var start_time = '2013-08-27T18:00:00-0700'
@@ -259,7 +280,7 @@ app.set('views', __dirname + '/views');
 app.post('/submit', function(req, res){
   url = req.body.demo;
   if (url && url.split(':').length < 2) {
-    url = 'http://' + url	
+    url = 'http://' + url	;
   }
   db.collection('hacks').insert({
     names: req.body.name,
@@ -271,7 +292,7 @@ app.post('/submit', function(req, res){
     hackathon: 'hack',
     date: new Date()
   }, function(error, docs) {
-    res.redirect('/hack/hack')
+    res.redirect('/hack/hack');
   });
 });
 
@@ -307,12 +328,11 @@ app.get('/submit', function(req, res){
 app.get('/media/:id', function(req, res){
   var pid = req.params.id;
   var p = photographs[pid];
-  if (p != undefined) {
+  if (p !== undefined) {
     res.render('photos', {page: 'media', current: p});
   } else {
     res.redirect('/media');
   }
-
 });
 
 app.get('/present', function(req, res) {
@@ -323,7 +343,7 @@ app.get('/present', function(req, res) {
 
 app.get('/hack/:hackathon', function(req, res) {
   db.collection('hacks').find({'hackathon': req.params.hackathon}).toArray(function(err, hacks) {
-    if (hacks.length == 0 || err) {
+    if (hacks.length === 0 || err) {
       res.redirect('/');
     } else {
       res.render('hack', {layout: false, hacks: hacks});
@@ -334,6 +354,6 @@ app.get('/hack/:hackathon', function(req, res) {
 app.get('/payments', function(req, res){
   //empty for now...
   res.render('payments',{page: 'payments'});
-})
+});
 
 app.listen(process.env.PORT || 8086);
