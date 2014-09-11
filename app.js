@@ -192,10 +192,6 @@ function refreshCache () {
         events = {'new': [], 'old': []};
         data = JSON.parse(body).data;
 
-        // This is a monkey patch for a fb bug
-        // BRIAN CHU'S NOTE: I have commented this out because it appears to be useless:
-        // addMissingEvent(events);
-
         var event, date;
         for(var i in data) {
           event = data[i];
@@ -226,10 +222,6 @@ function refreshCache () {
                   event.description = event.description.split('\n').shift();
                 }
                 event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large";
-                // Brian Chu: I removed this because it seems like a giant hack:
-                // if( typeof(event.name) !== "undefined" && event.name.indexOf("Big Hack") >= 0) {
-                //   event.pic_url = "/images/events/bighack.png";
-                // }
                 if(event.dateObj.valueOf() > currentTime) {
                   events['new'].push(event);
                 } else {
@@ -250,32 +242,6 @@ function refreshCache () {
   });
 
   setTimeout(refreshCache, 60000);
-}
-
-// Add the missing H@B office hour event
-// Brian Chu's NOTE: this appears to be useless.
-function addMissingEvent(events) {
-  var ts = (new Date()).valueOf();
-  var start_time = '2013-08-27T18:00:00-0700'
-  var date = new Date(start_time);
-
-  var event = {
-    name: "H@B \"Office Hours && Finishathon\"",
-    id: "577658228959046",
-    dateObj: date,
-    date: months[date.getMonth()] + " " + date.getDate(),
-    time: formatDate(date),
-    start_time: start_time,
-    description: "If you have any questions about Unix, classes, hacking, or are just new to Computer Science, this is the perfect opportunity to get your questions answered.Come hang out with strangers (soon to be friends), and get your Linux/Vim/Powershell/other program set up so you can hit the ground running. We’ve got a vast array (pun intended) of workshops coming your way this semester, both for beginners and ninjas/divas alike.",
-    pic_url: "https://sphotos-b-lax.xx.fbcdn.net/hphotos-prn1/561925_10201250440574416_1488953319_n.jpg",
-    location: "Soda Hall"
-  };
-
-  if(event.dateObj.valueOf() > ts) {
-    events['new'].push(event);
-  } else {
-    events['old'].push(event);
-  }
 }
 
 refreshCache();
