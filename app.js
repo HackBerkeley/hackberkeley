@@ -10,6 +10,7 @@ var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov",
 
 var projects;
 var events;
+var fbGroupCount = 0;
 
 var HAB_GROUP_ID = '276905079008757';
 // Access token is from Brian Chu's account, and expires after 60 days.
@@ -111,7 +112,6 @@ function getPhotos(manyalbums) {
     inline_function(j);
   }
 }
-
 
 // Get cover photos for each album
 function getCoverPhotos(albums) {
@@ -239,7 +239,36 @@ function refreshCache () {
 
       } catch (e){console.log(e.message);}
     });
-  });
+  }); // end event list refresh
+
+  // refresh count of facebook group members:
+  var memberCountPaging = function(url) {
+    https.get(url || {
+      host: 'graph.facebook.com',
+      path: '/' + HAB_GROUP_ID + '/members?access_token=' + ACCESS_TOKEN
+    }, function(res) {
+      var body = "";
+      res.on('data', function(chunk) {
+        body += chunk;
+      });
+      res.on('end', function() {
+        if (!url) {
+          fbGroupCount = 0;
+        }
+        try {
+          body = JSON.parse(body);
+          fbGroupCount += body.data.length;
+          console.log(body.data.length);
+          if (body.paging && body.paging.next) {
+            memberCountPaging(body.paging.next);
+          }
+        } catch (error) {
+          console.log(error.message);
+        }
+      });
+    });
+  };
+  memberCountPaging();
 
   setTimeout(refreshCache, 60000);
 }
@@ -275,11 +304,11 @@ app.post('/submit', function(req, res){
 });
 
 app.get('/', function(req, res){
-  res.render('home', {page: 'home', events: events});
+  res.render('home', {page: 'home', events: events, fbGroupCount: fbGroupCount});
 });
 
 app.get('/home', function(req, res){
-  res.render('home', {page: 'home', events: events});
+  res.render('home', {page: 'home', events: events, fbGroupCount: fbGroupCount});
 });
 
 app.get('/sponsors', function(req, res){
