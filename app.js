@@ -258,7 +258,7 @@ function refreshCache () {
         try {
           body = JSON.parse(body);
           fbGroupCount += body.data.length;
-          console.log(body.data.length);
+          console.log('fbGroupCount:', fbGroupCount);
           if (body.paging && body.paging.next) {
             memberCountPaging(body.paging.next);
           }
