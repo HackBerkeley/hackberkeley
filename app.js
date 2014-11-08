@@ -9,7 +9,8 @@ var db = mongo.db('mongodb://hacker:berkeley@alex.mongohq.com:10018/hackberkeley
 var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 var projects;
-var events;
+var events = {'new': [], 'old': []};
+var albums = [];
 var fbGroupCount = 0;
 
 var HAB_GROUP_ID = '276905079008757';
@@ -24,8 +25,8 @@ var HAB_GROUP_ID = '276905079008757';
 // 5. Make this API call:
 // https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=[app-id]&client_secret=[app-secret]&fb_exchange_token=[access-token]
 // 6. The result is a long-term access token. Paste that in as ACCESS_TOKEN.
-// An example is: https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
-var ACCESS_TOKEN = 'CAAVwW1aUxX8BAI2J1eB3UWFHwOj0piAniThP2FgzPivgzUKn7SnCLTjs6M0laVAybprZBhp4ZA94xIzAZBTLmZBQoa4bVBRfDEKOwv3EqUpGzP5k2RyRcvdjhRc0MZA0x5A2MzZBTLzmmCeZBLpMZAnxesD0Dd4M0RzeusvklhmZBER02YV1KuYfRaD99Lm97PWdas5jIfWvwTkmFKevPdAeO';
+// An example is (for Brian's Hackers at Berkeley FB app): https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
+var ACCESS_TOKEN = 'CAAVwW1aUxX8BADjqiGmopLKkmxpKNXmN5vCRchmJpIaNb12LTZA4dUtb0mEBuYRoyOrfaugiZCNwXI1zNZAU9enwPvy5xFOqTtBXliyqXK7sIAjUA3XvHDmZAgBaZBZA98PYZChuLrQyK2v9TYZBqfFVDhE95pAWqGJP694lQd0rrfPxrYGOsEQlJSV5ov1WScDZBPYbJyyJwIiA8Y3tTSxDr';
 
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
@@ -155,7 +156,7 @@ function refreshCache () {
       });
       res.on('end', function() {
         try {
-          albums = [];
+          var newAlbums = [];
           photographs = {};
           var album;
           var data = JSON.parse(body);
@@ -167,7 +168,10 @@ function refreshCache () {
               coverPhoto: album.cover_pid,
               fbLink: album.link
             };
-            albums.push(currentalbum);
+            newAlbums.push(currentalbum);
+          }
+          if (newAlbums.length > 0) {
+            albums = newAlbums;
           }
           getCoverPhotos(albums);
         } catch (error) {
@@ -189,11 +193,11 @@ function refreshCache () {
     res.on('end', function(){
       try {
         var currentTime = (new Date()).valueOf();
-        events = {'new': [], 'old': []};
+        updatedEvents = {'new': [], 'old': []};
         data = JSON.parse(body).data;
 
         var event, date;
-        for(var i in data) {
+        for(var i = 0 ; i < data.length; i++) {
           event = data[i];
           if(event.name !== undefined) {
             // gets a more detailed event object
@@ -223,14 +227,15 @@ function refreshCache () {
                 }
                 event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large";
                 if(event.dateObj.valueOf() > currentTime) {
-                  events['new'].push(event);
+                  updatedEvents.new.push(event);
                 } else {
-                  events['old'].push(event);
+                  updatedEvents.old.push(event);
                 }
 
-                // sorts the events every time. this may be ineffecient depending on what the sorting algorithm is and could be refactored
-                events['new'].sort(asorter);
-                events['old'].sort(dsorter);
+                // sorts the updatedEvents every time. this may be ineffecient depending on what the sorting algorithm is and could be refactored
+                updatedEvents.new.sort(asorter);
+                updatedEvents.old.sort(dsorter);
+                events = updatedEvents;
               });
             });
 
