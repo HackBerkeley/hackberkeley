@@ -20,13 +20,13 @@ var HAB_GROUP_ID = '276905079008757';
 // To regenerate the access token:
 // 1. Go to https://developers.facebook.com/tools/explorer
 // 2. Select any Facebook Application you are the admin of.
-// 3. Generate an access token with 'user_groups' permission checked off.
+// 3. Generate an access token with 'user_groups' permission checked on.
 // 4. The access token is a short-lived access token (expires in 1 hour)
 // 5. Make this API call:
 // https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=[app-id]&client_secret=[app-secret]&fb_exchange_token=[access-token]
 // 6. The result is a long-term access token. Paste that in as ACCESS_TOKEN.
 // An example is (for Brian's Hackers at Berkeley FB app): https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
-var ACCESS_TOKEN = 'CAAVwW1aUxX8BADjqiGmopLKkmxpKNXmN5vCRchmJpIaNb12LTZA4dUtb0mEBuYRoyOrfaugiZCNwXI1zNZAU9enwPvy5xFOqTtBXliyqXK7sIAjUA3XvHDmZAgBaZBZA98PYZChuLrQyK2v9TYZBqfFVDhE95pAWqGJP694lQd0rrfPxrYGOsEQlJSV5ov1WScDZBPYbJyyJwIiA8Y3tTSxDr';
+var ACCESS_TOKEN = 'CAAVwW1aUxX8BANoS2rTakcjgM4AK3JZCe151Yybjv7nFZC41rP0sQHtlUAc7PgpN23ldJm6NtAsxeZAYgY2s2ivIZAxfAZAEuQaGNVHFvt1M09TfycJPZBxu9Hc6aVt8mJmrPk2uBMZCeZBDW7Mo54UkCK3q12nurRLAZANJF1CKbp7B2hEzMqY6vqJfhGCdL3yQuC276WDVFByY94ZA1j5CT0';
 
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
