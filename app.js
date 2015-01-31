@@ -369,4 +369,9 @@ app.get('/payments', function(req, res){
   res.render('payments',{page: 'payments'});
 });
 
+app.get('/chat', function(req, res) {
+  console.log(res.redirect.toString());
+  res.redirect('http://chat.hackersatberkeley.com', 301);
+});
+
 app.listen(process.env.PORT || 8086);
