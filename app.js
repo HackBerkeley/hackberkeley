@@ -14,6 +14,7 @@ var albums = [];
 var fbGroupCount = 0;
 
 var HAB_GROUP_ID = '276905079008757';
+var HAB_PAGE_ID = '157417191056406';
 // Access token is from Brian Chu's account, and expires after 60 days.
 // Read more here: https://developers.facebook.com/docs/facebook-login/access-tokens/
 // The access token MUST be a *user* access token (not an *app* or *page* access token).
@@ -141,6 +142,63 @@ function getCoverPhotos(albums) {
   }
 }
 
+// passed a list of events, data
+function updateEvents (data) {
+  try {
+    var currentTime = (new Date()).valueOf();
+    updatedEvents = {'new': [], 'old': []};
+
+    var event, date;
+    for(var i = 0 ; i < data.length; i++) {
+      event = data[i];
+      if(event.name !== undefined) {
+        // gets a more detailed event object
+        https.get({
+          host: 'graph.facebook.com',
+          path: 'https://graph.facebook.com/' + event.id + '?access_token=' + ACCESS_TOKEN
+        }, function(res) {
+          body = "",
+          res.on('data', function(chunk){
+            body += chunk;
+          });
+          res.on('end', function() {
+            if(body == "false") {
+              return;
+            }
+            try {
+              event = JSON.parse(body);
+            } catch(e) {
+              return;
+            }
+            date = new Date(event.start_time);
+            event.date = months[date.getMonth()] + " " + date.getDate();
+            event.dateObj = date;
+            event.time = formatDate(date);
+            if( event.description !== undefined ) {
+              event.description = event.description.split('\n').shift();
+            }
+            event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large";
+            if(event.dateObj.valueOf() > currentTime) {
+              updatedEvents.new.push(event);
+            } else {
+              updatedEvents.old.push(event);
+            }
+
+            // sorts the updatedEvents every time. this may be ineffecient depending on what the sorting algorithm is and could be refactored
+            updatedEvents.new.sort(asorter);
+            updatedEvents.old.sort(dsorter);
+            if (updatedEvents.new.length + updatedEvents.old.length >= events.new.length + events.old.length) {
+              events =updatedEvents;
+            }
+          });
+        });
+
+      }
+    }
+
+  } catch (e){console.log(e.message);}
+}
+
 function refreshCache () {
   db.collection('projects').find().sort({'order':1}).toArray(function(err, items){
       projects = items;
@@ -191,62 +249,31 @@ function refreshCache () {
       body += chunk;
     });
     res.on('end', function(){
+      var data = [];
       try {
-        var currentTime = (new Date()).valueOf();
-        updatedEvents = {'new': [], 'old': []};
-        data = JSON.parse(body).data;
-
-        var event, date;
-        for(var i = 0 ; i < data.length; i++) {
-          event = data[i];
-          if(event.name !== undefined) {
-            // gets a more detailed event object
-            https.get({
-              host: 'graph.facebook.com',
-              path: 'https://graph.facebook.com/' + event.id + '?access_token=' + ACCESS_TOKEN
-            }, function(res) {
-              body = "",
-              res.on('data', function(chunk){
-                body += chunk;
-              });
-              res.on('end', function() {
-                if(body == "false") {
-                  return;
-                }
-                try {
-                  event = JSON.parse(body);
-                } catch(e) {
-                  return;
-                }
-                date = new Date(event.start_time);
-                event.date = months[date.getMonth()] + " " + date.getDate();
-                event.dateObj = date;
-                event.time = formatDate(date);
-                if( event.description !== undefined ) {
-                  event.description = event.description.split('\n').shift();
-                }
-                event.pic_url = "https://graph.facebook.com/" + event.id + "/picture?type=large";
-                if(event.dateObj.valueOf() > currentTime) {
-                  updatedEvents.new.push(event);
-                } else {
-                  updatedEvents.old.push(event);
-                }
-
-                // sorts the updatedEvents every time. this may be ineffecient depending on what the sorting algorithm is and could be refactored
-                updatedEvents.new.sort(asorter);
-                updatedEvents.old.sort(dsorter);
-                events = updatedEvents;
-              });
-            });
-
-          }
-        }
-
+        data = data.concat(JSON.parse(body).data);
       } catch (e){console.log(e.message);}
+
+      https.get({
+        host: 'graph.facebook.com',
+        path: '/' + HAB_PAGE_ID + '/events?access_token=' + ACCESS_TOKEN
+      }, function(res) {
+        var body = "";
+        res.on('data', function(chunk){
+          body += chunk;
+        });
+        res.on('end', function(){
+          try {
+            data = data.concat(JSON.parse(body).data);
+            updateEvents(data);
+          } catch (e){console.log(e.message);}
+        });
+      }); // end nested event list refresh
     });
   }); // end event list refresh
 
   // refresh count of facebook group members:
+  var newFbGroupCount = 0;
   var memberCountPaging = function(url) {
     https.get(url || {
       host: 'graph.facebook.com',
@@ -257,16 +284,19 @@ function refreshCache () {
         body += chunk;
       });
       res.on('end', function() {
-        if (!url) {
-          fbGroupCount = 0;
-        }
         try {
           body = JSON.parse(body);
-          fbGroupCount += body.data.length;
-          console.log('fbGroupCount:', fbGroupCount);
+          newFbGroupCount += body.data.length;
+          console.log('newFbGroupCount:', newFbGroupCount);
           if (body.paging && body.paging.next) {
             memberCountPaging(body.paging.next);
           }
+          // no more pages
+          else {
+            // don't overwrite with lower value
+            fbGroupCount = Math.max(newFbGroupCount, fbGroupCount);
+          }
+
         } catch (error) {
           console.log(error.message);
         }
