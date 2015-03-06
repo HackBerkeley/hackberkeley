@@ -7,6 +7,7 @@ var http = require('http');
 var mongo = require('mongoskin');
 var db = mongo.db('mongodb://hacker:berkeley@alex.mongohq.com:10018/hackberkeley');
 var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var redirects = require('./redirects');
 
 var projects;
 var events = {'new': [], 'old': []};
@@ -403,5 +404,7 @@ app.get('/chat', function(req, res) {
   console.log(res.redirect.toString());
   res.redirect('http://chat.hackersatberkeley.com', 301);
 });
+
+redirects(app);
 
 app.listen(process.env.PORT || 8086);
