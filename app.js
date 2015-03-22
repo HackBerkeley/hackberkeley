@@ -28,7 +28,7 @@ var HAB_PAGE_ID = '157417191056406';
 // https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=[app-id]&client_secret=[app-secret]&fb_exchange_token=[access-token]
 // 6. The result is a long-term access token. Paste that in as ACCESS_TOKEN.
 // An example is (for Brian's Hackers at Berkeley FB app): https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
-var ACCESS_TOKEN = 'CAAVwW1aUxX8BANoS2rTakcjgM4AK3JZCe151Yybjv7nFZC41rP0sQHtlUAc7PgpN23ldJm6NtAsxeZAYgY2s2ivIZAxfAZAEuQaGNVHFvt1M09TfycJPZBxu9Hc6aVt8mJmrPk2uBMZCeZBDW7Mo54UkCK3q12nurRLAZANJF1CKbp7B2hEzMqY6vqJfhGCdL3yQuC276WDVFByY94ZA1j5CT0';
+var ACCESS_TOKEN = 'CAAVwW1aUxX8BAMbpp5pZAZCuZCdnQJMikBtZBnlYcqZBRalEeFXYa6f1P6JWgDeJLaxoB9bzddHYfEzS8ZAOCunnG0Xx8ZAYkpXeidh7lcZBfXEKIqx49629QG1U6EnRieQAp9rZAQ688PzlBYP3waZCTbZBgDv0KWZA4r46lCPoDzcvHo7KLS6OQq3U6LewXdimyp7q38v9PYi0T2ZB4ptomQqzp';
 
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
@@ -106,8 +106,8 @@ function getPhotos(manyalbums) {
               photo['source'] = pics[j]['source'];
               currpic.push(photo);
             }
-          } catch (error) {
-            console.log(error.message);
+          } catch (err) {
+            console.log('Photos:', err.message);
           }
         });
       });
@@ -135,8 +135,8 @@ function getCoverPhotos(albums) {
           var data = JSON.parse(body);
           album.icon = data.picture;
           album.source = data.source;
-        } catch (error) {
-          console.log(error.message);
+        } catch (err) {
+          console.log('Cover photos:', err.message);
         }
       });
     });
@@ -152,7 +152,7 @@ function updateEvents (data) {
     var event, date;
     for(var i = 0 ; i < data.length; i++) {
       event = data[i];
-      if(event.name !== undefined) {
+      if (event.name !== undefined) {
         // gets a more detailed event object
         https.get({
           host: 'graph.facebook.com',
@@ -168,7 +168,8 @@ function updateEvents (data) {
             }
             try {
               event = JSON.parse(body);
-            } catch(e) {
+            } catch(err) {
+              console.log('Single event:', err.message)
               return;
             }
             date = new Date(event.start_time);
@@ -189,7 +190,7 @@ function updateEvents (data) {
             updatedEvents.new.sort(asorter);
             updatedEvents.old.sort(dsorter);
             if (updatedEvents.new.length + updatedEvents.old.length >= events.new.length + events.old.length) {
-              events =updatedEvents;
+              events = updatedEvents;
             }
           });
         });
@@ -197,7 +198,9 @@ function updateEvents (data) {
       }
     }
 
-  } catch (e){console.log(e.message);}
+  } catch (err) {
+    console.log('updateEvents:', err.message);
+  }
 }
 
 function refreshCache () {
@@ -219,6 +222,9 @@ function refreshCache () {
           photographs = {};
           var album;
           var data = JSON.parse(body);
+          if (!data.data) {
+            return;
+          }
           for (var i = 0; i < data.data.length ; i++) {
             album = data.data[i];
             var currentalbum = {
@@ -233,8 +239,8 @@ function refreshCache () {
             albums = newAlbums;
           }
           getCoverPhotos(albums);
-        } catch (error) {
-          console.log(error.message);
+        } catch (err) {
+          console.log('Albums:', err.message);
         }
       });
   });
@@ -250,10 +256,9 @@ function refreshCache () {
       body += chunk;
     });
     res.on('end', function(){
-      var data = [];
       try {
-        data = data.concat(JSON.parse(body).data);
-      } catch (e){console.log(e.message);}
+        data = JSON.parse(body).data || []
+      } catch (err) { console.log('Events parse:', err.message); }
 
       https.get({
         host: 'graph.facebook.com',
@@ -265,9 +270,9 @@ function refreshCache () {
         });
         res.on('end', function(){
           try {
-            data = data.concat(JSON.parse(body).data);
+            data = data.concat(JSON.parse(body).data || []);
             updateEvents(data);
-          } catch (e){console.log(e.message);}
+          } catch (err) {'Subsequent events parse:', console.log(err.message); }
         });
       }); // end nested event list refresh
     });
@@ -287,6 +292,9 @@ function refreshCache () {
       res.on('end', function() {
         try {
           body = JSON.parse(body);
+          if (!body.data) {
+            return;
+          }
           newFbGroupCount += body.data.length;
           console.log('newFbGroupCount:', newFbGroupCount);
           if (body.paging && body.paging.next) {
@@ -298,8 +306,8 @@ function refreshCache () {
             fbGroupCount = Math.max(newFbGroupCount, fbGroupCount);
           }
 
-        } catch (error) {
-          console.log(error.message);
+        } catch (err) {
+          console.log('Member count:', err.message);
         }
       });
     });
@@ -334,7 +342,7 @@ app.post('/submit', function(req, res){
     demo: url,
     hackathon: 'hack',
     date: new Date()
-  }, function(error, docs) {
+  }, function(err, docs) {
     res.redirect('/hack/hack');
   });
 });
