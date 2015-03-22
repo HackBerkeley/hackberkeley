@@ -158,7 +158,8 @@ function updateEvents (data) {
           host: 'graph.facebook.com',
           path: 'https://graph.facebook.com/' + event.id + '?access_token=' + ACCESS_TOKEN
         }, function(res) {
-          body = "",
+          res.setEncoding('utf8');
+          var body = "";
           res.on('data', function(chunk){
             body += chunk;
           });
