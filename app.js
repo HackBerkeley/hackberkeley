@@ -79,15 +79,16 @@ function formatDate(date) {
   return h+":"+m+dd;
 }
 
-// Get cover photos for each album
+// Get cover photos for each album (Facebook's API does not seem to work here)
 function getCoverPhotos(albums) {
   for (var i = 0; i < albums.length; i++) {
     var album = albums[i];
-    if (!album.coverPhoto) { continue; }
-    var coverPath = '/' + album.coverPhoto + '/?access_token='+ACCESS_TOKEN;
+    if (!album.id) { continue; }
+
+    var albumPath = '/' + album.id + '/?access_token='+ACCESS_TOKEN;
     var getObj = https.get({
       host: 'graph.facebook.com',
-      path: coverPath
+      path: albumPath
     }, function(res) {
         var body = "";
       res.on('data', function(chunk) {
@@ -96,8 +97,7 @@ function getCoverPhotos(albums) {
       res.on('end', function() {
         try {
           var data = JSON.parse(body);
-          album.icon = data.picture;
-          album.source = data.source;
+          var coverPhotoId = data.cover_photo
         } catch (err) {
           console.log('Cover photos:', err.message);
         }
@@ -200,7 +200,6 @@ function refreshCache () {
             var currentalbum = {
               name: album.name,
               id: album.id,
-              coverPhoto: album.cover_pid,
               fbLink: album.link
             };
             newAlbums.push(currentalbum);
