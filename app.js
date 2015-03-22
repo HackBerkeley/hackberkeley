@@ -79,50 +79,13 @@ function formatDate(date) {
   return h+":"+m+dd;
 }
 
-// This function is no longer used. It used to grab photos from each album, but Facebook no longer provides an API for getting FB group album photos.
-function getPhotos(manyalbums) {
-  for (var j in manyalbums) {
-    var inline_function = function(i) {
-      var a = manyalbums[i];
-      var aid = a['id'];
-      var currpic = photographs[aid]['photos'] = [];
-
-      var photosPath = '/' + aid + '/photos?limit=200&access_token='+ACCESS_TOKEN;
-      https.get({
-        host: 'graph.facebook.com',
-        path: photosPath
-      }, function(res) {
-          var body = "";
-          res.on('data', function(chunk) {
-          body += chunk;
-        });
-        res.on('end', function() {
-          try {
-            var data = JSON.parse(body);
-            var pics = data['data'];
-            a['icon'] = pics[0]['picture'];
-            for (var j in pics) {
-              var photo = {};
-              photo['source'] = pics[j]['source'];
-              currpic.push(photo);
-            }
-          } catch (err) {
-            console.log('Photos:', err.message);
-          }
-        });
-      });
-    }
-    inline_function(j);
-  }
-}
-
 // Get cover photos for each album
 function getCoverPhotos(albums) {
   for (var i = 0; i < albums.length; i++) {
     var album = albums[i];
     if (!album.coverPhoto) { continue; }
     var coverPath = '/' + album.coverPhoto + '/?access_token='+ACCESS_TOKEN;
-    https.get({
+    var getObj = https.get({
       host: 'graph.facebook.com',
       path: coverPath
     }, function(res) {
@@ -140,6 +103,7 @@ function getCoverPhotos(albums) {
         }
       });
     });
+    errorNoOp(getObj);
   }
 }
 
@@ -152,9 +116,10 @@ function updateEvents (data) {
     var event, date;
     for(var i = 0 ; i < data.length; i++) {
       event = data[i];
-      if (event.name !== undefined) {
+      if (event.name == undefined) { continue; }
+      try {
         // gets a more detailed event object
-        https.get({
+        var getObj = https.get({
           host: 'graph.facebook.com',
           path: 'https://graph.facebook.com/' + event.id + '?access_token=' + ACCESS_TOKEN
         }, function(res) {
@@ -167,12 +132,7 @@ function updateEvents (data) {
             if(body == "false") {
               return;
             }
-            try {
-              event = JSON.parse(body);
-            } catch(err) {
-              console.log('Single event:', err.message)
-              return;
-            }
+            event = JSON.parse(body);
             date = new Date(event.start_time);
             event.date = months[date.getMonth()] + " " + date.getDate();
             event.dateObj = date;
@@ -194,9 +154,14 @@ function updateEvents (data) {
               events = updatedEvents;
             }
           });
-        });
-
+        }); // end https.get
+        errorNoOp(getObj);
+      } // end try
+      catch(err) {
+        console.log('Single event:', err.message)
+        return;
       }
+
     }
 
   } catch (err) {
@@ -204,12 +169,16 @@ function updateEvents (data) {
   }
 }
 
+function errorNoOp(req) {
+  req.on('error', function() {});
+}
+
 function refreshCache () {
+  console.log('Start refresh cache');
   db.collection('projects').find().sort({'order':1}).toArray(function(err, items){
       projects = items;
   });
-
-  https.get({
+  var getObj = https.get({
     host: 'graph.facebook.com',
     path: '/' + HAB_GROUP_ID + '/albums?access_token=' + ACCESS_TOKEN
   }, function(res) {
@@ -245,10 +214,11 @@ function refreshCache () {
         }
       });
   });
+errorNoOp(getObj);
 
 
   // refresh list of events:
-  https.get({
+  var getObj = https.get({
     host: 'graph.facebook.com',
     path: '/' + HAB_GROUP_ID + '/events?access_token=' + ACCESS_TOKEN
   }, function(res) {
@@ -261,7 +231,7 @@ function refreshCache () {
         data = JSON.parse(body).data || []
       } catch (err) { console.log('Events parse:', err.message); }
 
-      https.get({
+      var getObj = https.get({
         host: 'graph.facebook.com',
         path: '/' + HAB_PAGE_ID + '/events?access_token=' + ACCESS_TOKEN
       }, function(res) {
@@ -276,13 +246,15 @@ function refreshCache () {
           } catch (err) {'Subsequent events parse:', console.log(err.message); }
         });
       }); // end nested event list refresh
+      errorNoOp(getObj);
     });
   }); // end event list refresh
+  errorNoOp(getObj);
 
   // refresh count of facebook group members:
   var newFbGroupCount = 0;
   var memberCountPaging = function(url) {
-    https.get(url || {
+    var getObj = https.get(url || {
       host: 'graph.facebook.com',
       path: '/' + HAB_GROUP_ID + '/members?access_token=' + ACCESS_TOKEN
     }, function(res) {
@@ -312,10 +284,12 @@ function refreshCache () {
         }
       });
     });
+    errorNoOp(getObj);
   };
   memberCountPaging();
 
-  setTimeout(refreshCache, 60000);
+  // 5 minutes
+  setTimeout(refreshCache, 5 * 60000);
 }
 
 refreshCache();
