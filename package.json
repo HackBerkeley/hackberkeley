@@ -12,8 +12,9 @@
     "node": "v0.8.x"
   },
   "dependencies": {
-    "express": "2.5.11",
     "ejs": "",
+    "express": "2.5.11",
+    "lodash": "^3.5.0",
     "mongoskin": "*"
   },
   "devDependencies": {},
