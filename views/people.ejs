@@ -1,12 +1,81 @@
+<style>
+#roster {
+  padding: 0.25em;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+#roster li {
+  float: left;
+  width: 50%;
+  padding: 0.25em;
+  box-sizing: border-box;
+}
+#roster img {
+  display: block;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#roster li:nth-child(odd) {
+  clear: left;
+}
+
+@media screen and (min-width: 10em) {
+  #roster li {
+      width: 25%;
+    }
+  #roster li:nth-child(odd) {
+    clear: none;
+  }
+  #roster li:nth-child(4n+1) {
+      clear: left;
+  }
+  #roster li:nth-child(3n+1) {
+    clear: none;
+  }
+}
+@media screen and (min-width: 42em) {
+  #roster li:nth-child(4n+1) {
+    clear: none;
+  }
+  #roster li {
+      width: 16.666666666%;
+  }
+  #roster li:nth-child(6n+1) {
+      clear: left;
+  }
+  #roster li:nth-child(5n+1) {
+    clear: none;
+  }
+}
+</style>
+<link href="css/opentip.css" rel="stylesheet" type="text/css">
+
 <div class="wrap">
   <h1>This is who we are</h1>
   <div class="box">
     <p>As a community of hackers, we do not have hierarchy or elections. The club is led by a group of officers.
     <p>If you would like to become a Hackers @ Berkeley officer, talk to someone at the next event or email us!</p>
   </div>
+
+  <div class="box">
+    <ul id="roster">
+    <% for(var i = 0; i < people.length; i++) { var person = people[i]; %>
+      <li data-ot="<%=person.name%>" data-ot-delay="0" data-ot-style="dark" data-ot-tip-joint="bottom" data-ot-fixed="true" data-ot-target="true">
+      <% if (person.link) { %>
+        <a href="<%=person.link%>"><img src="/images/people/<%=person.img%>" alt="<%=person.name%>" /></a>
+      <% } else { %>
+        <img src="/images/people/<%=person.img%>" alt="<%=person.name%>" />
+      <% }%>
+      </li>
+    <% } %>
+    </ul>
+  </div>
+
   <h1>This is who to contact</h1>
   <div class="box">
     <p>Everyone: <strong><a href="mailto:team@hackersatberkeley.com">team@hackersatberkeley.com</a></strong></p>
     <p>Events/Sponsorships: <strong><a href="mailto:ir@hackersatberkeley.com">ir@hackersatberkeley.com</a></strong></p>
   </div>
 </div>
+
+<script src="js/opentip-jquery.min.js" async defer></script>

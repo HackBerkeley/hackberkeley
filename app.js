@@ -1,6 +1,7 @@
 var express = require('express');
 var fs = require('fs');
 var app =  express.createServer();
+var _ = require('lodash');
 var url = require('url');
 var https = require('https');
 var http = require('http');
@@ -338,8 +339,9 @@ app.get('/events', function(req, res){
   res.render('events', {page: 'events', events: events});
 });
 
+var roster = require('./roster.js');
 app.get('/people', function(req, res){
-  res.render('people', {page: 'people'});
+  res.render('people', { page: 'people', people: roster.getPeople() });
 });
 
 app.get('/media', function(req, res){
