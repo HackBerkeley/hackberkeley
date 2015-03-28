@@ -27,6 +27,7 @@ var people = [
   'Nathan Mandi',
   'Sumukh Sridhara',
   'Sidd Karamcheti',
+  'Alan Li',
 ];
 
 // set image filenames:
