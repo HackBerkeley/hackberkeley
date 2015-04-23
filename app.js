@@ -231,6 +231,7 @@ errorNoOp(getObj);
         data = JSON.parse(body).data || []
       } catch (err) { console.log('Events parse:', err.message); }
 
+      // get UPCOMING events from Facebook page (not past events)
       var getObj = https.get({
         host: 'graph.facebook.com',
         path: '/' + HAB_PAGE_ID + '/events?access_token=' + ACCESS_TOKEN

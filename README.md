@@ -43,3 +43,9 @@ if you want to run on a port different from the default value of 8086, use `node
 
 Work on a separate branch and push when you're confident in your changes.)
 PUSH YOUR CHANGES TO GITHUB BEFORE PUSHING TO HEROKU
+
+TODO
+----
+
+1. Refactor/rewrite all node API code
+2. Follow next paging calls for group AND page events
