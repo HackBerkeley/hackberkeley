@@ -29,7 +29,7 @@ var HAB_PAGE_ID = '157417191056406';
 // https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=[app-id]&client_secret=[app-secret]&fb_exchange_token=[access-token]
 // 6. The result is a long-term access token. Paste that in as ACCESS_TOKEN.
 // An example is (for Brian's Hackers at Berkeley FB app): https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=1530912480478591&client_secret=ee8bc6a26e59c385640238a72522931b&fb_exchange_token=[replace with graph explorer token]
-var ACCESS_TOKEN = 'CAAVwW1aUxX8BAMbpp5pZAZCuZCdnQJMikBtZBnlYcqZBRalEeFXYa6f1P6JWgDeJLaxoB9bzddHYfEzS8ZAOCunnG0Xx8ZAYkpXeidh7lcZBfXEKIqx49629QG1U6EnRieQAp9rZAQ688PzlBYP3waZCTbZBgDv0KWZA4r46lCPoDzcvHo7KLS6OQq3U6LewXdimyp7q38v9PYi0T2ZB4ptomQqzp';
+var ACCESS_TOKEN = 'CAAD3shybXjYBAN8kT4ZCY9MsHZCPY5yJKj5QrYG6JeNfOYlji6abnE3jhFlRowxgA7DacB55Quixuy326kxEqr4CbOuwz9vlI0PG8ZAdZCsciHBvrW976A3AMcjZBJ8uutd7yUOPG22iHX7vdkF7zI0bScp0ikRByeZCqMtj5FXUWnak5QGQtgsBZBdDNI8vfuT7QrCmwQ00ZB2HSQmiAKkd';
 
 // sort comparators for unix timestamps
 function asorterTimestamp(a, b) {
